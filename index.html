@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="汉字 Study">
+<meta name="theme-color" content="#1a1a2e">
+<title>汉字 Study</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #222238;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0eeff;
+    --muted: rgba(240,238,255,0.5);
+    --hint: rgba(240,238,255,0.3);
+    --accent: #7c6af7;
+    --accent-dim: rgba(124,106,247,0.15);
+    --accent-glow: rgba(124,106,247,0.3);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --nav-h: 64px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Nav ─── */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(var(--nav-h) + var(--safe-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: var(--safe-bottom);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 4px; border: none; background: none;
+    color: var(--muted); cursor: pointer; font-size: 10px; letter-spacing: 0.3px;
+    transition: color 0.15s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.6; }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn.active svg { stroke-width: 2; }
+
+  /* ─── Screens ─── */
+  .screen {
+    display: none;
+    padding: 0 16px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 24px);
+    min-height: 100dvh;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .screen.active { display: block; }
+
+  /* ─── Typography ─── */
+  .page-title {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+    margin-bottom: 4px; color: var(--text);
+  }
+  .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+
+  /* ─── Cards ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+
+  /* ─── Stats ─── */
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
+  .stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; }
+  .stat-n { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-l { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .stat.accent .stat-n { color: var(--accent); }
+  .stat.green .stat-n { color: var(--green); }
+
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px 20px; border-radius: var(--radius-sm); border: none;
+    font-size: 15px; font-weight: 500; cursor: pointer;
+    font-family: inherit; transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-green { background: var(--green); color: #0a1a0f; }
+  .btn-amber { background: var(--amber); color: #1a1000; }
+  .btn-red { background: var(--red); color: #1a0000; }
+  .btn-block { width: 100%; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  /* ─── Inputs ─── */
+  .field-group { display: grid; gap: 10px; margin-bottom: 14px; }
+  .field-group.two { grid-template-columns: 1fr 1fr; }
+  .field-group.three { grid-template-columns: 1fr 1fr 1fr; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 11px 13px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-size: 15px; font-family: inherit;
+    outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 110px; }
+  ::placeholder { color: var(--hint); }
+
+  /* ─── Progress bar ─── */
+  .progress { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-bottom: 16px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
+
+  /* ─── Vocab list ─── */
+  .vocab-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0; border-bottom: 1px solid var(--border);
+  }
+  .vocab-item:last-child { border-bottom: none; }
+  .v-hanzi { font-size: 24px; min-width: 44px; }
+  .v-info { flex: 1; min-width: 0; }
+  .v-pinyin { font-size: 12px; color: var(--accent); margin-bottom: 1px; }
+  .v-eng { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge {
+    font-size: 10px; font-weight: 600; padding: 3px 8px;
+    border-radius: 20px; white-space: nowrap; letter-spacing: 0.3px;
+  }
+  .badge-new { background: var(--blue-dim); color: var(--blue); }
+  .badge-learning { background: var(--amber-dim); color: var(--amber); }
+  .badge-known { background: var(--green-dim); color: var(--green); }
+  .delete-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: none;
+    background: var(--surface2); color: var(--muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  /* ─── Flashcard ─── */
+  .flashcard-wrap { perspective: 1000px; margin-bottom: 16px; }
+  .flashcard {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    min-height: 220px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px;
+    position: relative;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+  .flashcard:active { border-color: var(--accent); }
+  .fc-hanzi { font-size: 72px; line-height: 1; }
+  .fc-pinyin { font-size: 20px; color: var(--accent); }
+  .fc-eng { font-size: 18px; color: var(--text); }
+  .fc-hint { font-size: 13px; color: var(--hint); }
+  .fc-tap-area {
+    position: absolute; inset: 0; display: flex;
+    align-items: flex-end; justify-content: center; padding-bottom: 16px;
+  }
+
+  /* ─── Quiz options ─── */
+  .quiz-opt {
+    width: 100%; padding: 16px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 16px; font-family: inherit;
+    cursor: pointer; text-align: left;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-appearance: none;
+  }
+  .quiz-opt:active:not(:disabled) { background: var(--surface2); }
+  .quiz-opt.correct { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .quiz-opt.wrong { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+  /* ─── Celebration / done screens ─── */
+  .done-screen { text-align: center; padding: 40px 20px; }
+  .done-icon { font-size: 64px; margin-bottom: 16px; }
+  .done-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .done-sub { font-size: 15px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+
+  /* ─── Due item ─── */
+  .due-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: var(--surface2);
+    border-radius: 10px; margin: 4px 4px 4px 0;
+  }
+  .due-chip-hanzi { font-size: 18px; }
+  .due-chip-meta { font-size: 12px; color: var(--muted); }
+
+  /* ─── Tag pills ─── */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag-pill {
+    padding: 5px 12px; border-radius: 20px; font-size: 13px;
+    border: 1px solid var(--border2); background: none;
+    color: var(--muted); cursor: pointer;
+    font-family: inherit;
+  }
+  .tag-pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Search ─── */
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-wrap input { padding-left: 38px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hint); font-size: 16px; pointer-events: none; }
+
+  /* ─── Empty state ─── */
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+  .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+  /* ─── Divider ─── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ─── Install banner ─── */
+  #install-banner {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: var(--accent);
+    color: white; font-size: 13px; font-weight: 500;
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 200; padding-top: calc(env(safe-area-inset-top,0px) + 10px);
+  }
+  #install-banner button { background: rgba(255,255,255,0.25); border: none; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border2); color: var(--text); padding: 10px 18px; border-radius: 20px; font-size: 14px; z-index: 300; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Install Banner (shown on first iOS visit) -->
+<div id="install-banner" style="display:none">
+  <span>📲 Add to Home Screen for the best experience</span>
+  <button onclick="document.getElementById('install-banner').style.display='none'">Got it</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════════════════ DASHBOARD ═══════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="page-title">汉字 Study</div>
+  <div class="page-sub" id="greeting">Ready to review</div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">Total words</div></div>
+    <div class="stat accent"><div class="stat-n" id="s-due">0</div><div class="stat-l">Due today</div></div>
+    <div class="stat green"><div class="stat-n" id="s-known">0</div><div class="stat-l">Mastered</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Due for review</div>
+    <div id="due-list"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="goTo('flash')">Flash&shy;cards</button>
+      <button class="btn btn-ghost" onclick="goTo('quiz')">Quiz me</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quick add</div>
+    <div class="field-group three">
+      <div><label>Chinese</label><input type="text" id="qa-h" placeholder="你好" autocomplete="off"></div>
+      <div><label>Pinyin</label><input type="text" id="qa-p" placeholder="nǐ hǎo" autocomplete="off"></div>
+      <div><label>English</label><input type="text" id="qa-e" placeholder="hello" autocomplete="off"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="quickAdd()">Add word</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ADD WORDS ═══════════════════════════ -->
+<div id="screen-add" class="screen">
+  <div class="page-title">Add words</div>
+  <div class="page-sub">Build your vocabulary list</div>
+
+  <div class="card">
+    <div class="card-title">Single word</div>
+    <div class="field-group two">
+      <div><label>Chinese (汉字)</label><input type="text" id="a-h" placeholder="学习" autocomplete="off"></div>
+      <div><label>Pinyin</label><input type="text" id="a-p" placeholder="xuéxí" autocomplete="off"></div>
+    </div>
+    <div class="field-group two">
+      <div><label>English</label><input type="text" id="a-e" placeholder="to study" autocomplete="off"></div>
+      <div><label>Tag (optional)</label><input type="text" id="a-t" placeholder="lesson 1" autocomplete="off"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="addSingle()">Add word</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Paste a list</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">One word per line: <code style="color:var(--accent)">hanzi, pinyin, english</code></p>
+    <textarea id="bulk-in" placeholder="你好, nǐ hǎo, hello&#10;谢谢, xiè xie, thank you&#10;水, shuǐ, water&#10;吃, chī, to eat&#10;学习, xuéxí, to study"></textarea>
+    <button class="btn btn-primary btn-sm" onclick="bulkAdd()" style="margin-top:10px">Import list</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ FLASHCARDS ═══════════════════════════ -->
+<div id="screen-flash" class="screen">
+  <div class="page-title">Flashcards</div>
+
+  <div id="fc-empty" class="empty" style="display:none">
+    <span class="empty-icon">🃏</span>
+    No words due for review.<br>Add some words first!
+    <br><br><button class="btn btn-primary" onclick="goTo('add')">Add words</button>
+  </div>
+
+  <div id="fc-active">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--muted)" id="fc-prog-text">1 of 1</span>
+      <span style="font-size:13px;color:var(--hint)">tap to flip</span>
+    </div>
+    <div class="progress"><div class="progress-fill" id="fc-prog-bar" style="width:0%"></div></div>
+
+    <div class="flashcard-wrap">
+      <div class="flashcard" id="fc-card" onclick="flipCard()">
+        <div id="fc-front">
+          <div class="fc-hanzi" id="fc-char">—</div>
+          <div class="fc-hint">tap to reveal</div>
+        </div>
+        <div id="fc-back" style="display:none">
+          <div class="fc-hanzi" id="fc-char2">—</div>
+          <div class="fc-pinyin" id="fc-pin">—</div>
+          <div class="fc-eng" id="fc-eng">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fc-rate" style="display:none">
+      <p style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:12px">How well did you know it?</p>
+      <div class="btn-row">
+        <button class="btn btn-red" onclick="rate(0)">Again</button>
+        <button class="btn btn-amber" onclick="rate(1)">Hard</button>
+        <button class="btn btn-green" onclick="rate(2)">Easy</button>
+      </div>
+    </div>
+
+    <div id="fc-done" class="done-screen" style="display:none">
+      <div class="done-icon">🎉</div>
+      <div class="done-title">Session done!</div>
+      <div class="done-sub" id="fc-done-msg"></div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-primary" onclick="startFlash()">Again</button>
+        <button class="btn btn-ghost" onclick="goTo('home')">Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ QUIZ ═══════════════════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="page-title">Quiz</div>
+
+  <div id="qz-empty" class="empty" style="display:none">
+    <span class="empty-icon">🧠</span>
+    Need at least 4 words to quiz.<br>Add more words first!
+    <br><br><button class="btn btn-primary" onclick="goTo('add')">Add words</button>
+  </div>
+
+  <div id="qz-active">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--muted)" id="qz-prog-text">1 of 10</span>
+      <span style="font-size:14px;font-weight:600;color:var(--accent)" id="qz-score-text">0 / 0</span>
+    </div>
+    <div class="progress"><div class="progress-fill" id="qz-prog-bar" style="width:0%"></div></div>
+
+    <div class="card" style="text-align:center;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div style="font-size:12px;color:var(--muted)">What is the meaning of:</div>
+      <div style="font-size:56px;line-height:1" id="qz-char">—</div>
+      <div style="font-size:16px;color:var(--accent)" id="qz-pin">—</div>
+    </div>
+
+    <div id="qz-opts"></div>
+
+    <div id="qz-done" class="done-screen" style="display:none">
+      <div class="done-icon" id="qz-done-icon">🏆</div>
+      <div class="done-title" id="qz-done-title">—</div>
+      <div class="done-sub" id="qz-done-sub">—</div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-primary" onclick="startQuiz()">Try again</button>
+        <button class="btn btn-ghost" onclick="goTo('home')">Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ VOCAB LIST ═══════════════════════════ -->
+<div id="screen-vocab" class="screen">
+  <div class="page-title">My words</div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="voc-search" placeholder="Search…" oninput="renderVocab()" autocomplete="off">
+  </div>
+  <div class="tag-row" id="tag-row"></div>
+  <div id="voc-list"></div>
+</div>
+
+<!-- ═══════════════════════════ NAV BAR ═══════════════════════════ -->
+<nav>
+  <button class="nav-btn active" id="nav-home" onclick="goTo('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" id="nav-add" onclick="goTo('add')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Add
+  </button>
+  <button class="nav-btn" id="nav-flash" onclick="goTo('flash')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Cards
+  </button>
+  <button class="nav-btn" id="nav-quiz" onclick="goTo('quiz')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+    Quiz
+  </button>
+  <button class="nav-btn" id="nav-vocab" onclick="goTo('vocab')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><line x1="4" y1="6" x2="4.01" y2="6"/><line x1="4" y1="12" x2="4.01" y2="12"/><line x1="4" y1="18" x2="4.01" y2="18"/></svg>
+    Words
+  </button>
+</nav>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let vocab = [
+  {id:1,hanzi:'你好',pinyin:'nǐ hǎo',eng:'hello',tag:'basics',interval:1,due:0,reps:0,ease:2.5},
+  {id:2,hanzi:'谢谢',pinyin:'xiè xie',eng:'thank you',tag:'basics',interval:1,due:0,reps:0,ease:2.5},
+  {id:3,hanzi:'再见',pinyin:'zài jiàn',eng:'goodbye',tag:'basics',interval:1,due:0,reps:0,ease:2.5},
+  {id:4,hanzi:'水',pinyin:'shuǐ',eng:'water',tag:'food',interval:2,due:Date.now()-86400000,reps:1,ease:2.5},
+  {id:5,hanzi:'吃',pinyin:'chī',eng:'to eat',tag:'food',interval:1,due:0,reps:0,ease:2.5},
+  {id:6,hanzi:'学习',pinyin:'xuéxí',eng:'to study / learn',tag:'school',interval:3,due:Date.now()-172800000,reps:2,ease:2.3},
+  {id:7,hanzi:'朋友',pinyin:'péngyǒu',eng:'friend',tag:'people',interval:1,due:0,reps:0,ease:2.5},
+  {id:8,hanzi:'今天',pinyin:'jīntiān',eng:'today',tag:'time',interval:1,due:0,reps:0,ease:2.5},
+];
+let nid = 9;
+let activeTag = null;
+
+let fcQueue=[], fcIdx=0, fcFlipped=false, fcCorrect=0;
+let qzQ=[], qzIdx=0, qzScore=0, qzAnswered=false;
+
+const now = () => Date.now();
+const isDue = w => w.due <= now();
+const dueWords = () => vocab.filter(isDue);
+const mastered = () => vocab.filter(w => w.reps >= 3 && w.interval > 7);
+
+// ─── Navigation ──────────────────────────────────────────
+function goTo(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'flash') startFlash();
+  if (name === 'quiz') startQuiz();
+  if (name === 'vocab') renderVocab();
+}
+
+// ─── Toast ───────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ─── Dashboard ───────────────────────────────────────────
+function renderHome() {
+  document.getElementById('s-total').textContent = vocab.length;
+  document.getElementById('s-due').textContent = dueWords().length;
+  document.getElementById('s-known').textContent = mastered().length;
+  const h = new Date().getHours();
+  document.getElementById('greeting').textContent =
+    h < 12 ? 'Good morning! Let\'s study.' : h < 17 ? 'Good afternoon! Time to review.' : 'Good evening! Quick review?';
+
+  const due = dueWords();
+  const dl = document.getElementById('due-list');
+  if (due.length === 0) {
+    dl.innerHTML = '<p style="font-size:14px;color:var(--muted)">All caught up! Come back tomorrow. 🎉</p>';
+    return;
+  }
+  dl.innerHTML = due.slice(0, 6).map(w =>
+    `<div class="due-chip"><span class="due-chip-hanzi">${w.hanzi}</span><span class="due-chip-meta">${w.eng}</span></div>`
+  ).join('') + (due.length > 6 ? `<div class="due-chip"><span class="due-chip-meta">+${due.length-6} more</span></div>` : '');
+}
+
+// ─── Quick add ───────────────────────────────────────────
+function quickAdd() {
+  const h = document.getElementById('qa-h').value.trim();
+  const p = document.getElementById('qa-p').value.trim();
+  const e = document.getElementById('qa-e').value.trim();
+  if (!h || !p || !e) { toast('Fill in all three fields'); return; }
+  vocab.push({id:nid++,hanzi:h,pinyin:p,eng:e,tag:'',interval:1,due:0,reps:0,ease:2.5});
+  document.getElementById('qa-h').value = '';
+  document.getElementById('qa-p').value = '';
+  document.getElementById('qa-e').value = '';
+  toast('✓ Added: ' + h);
+  renderHome();
+}
+
+// ─── Add single ──────────────────────────────────────────
+function addSingle() {
+  const h = document.getElementById('a-h').value.trim();
+  const p = document.getElementById('a-p').value.trim();
+  const e = document.getElementById('a-e').value.trim();
+  const t = document.getElementById('a-t').value.trim();
+  if (!h || !p || !e) { toast('Hanzi, pinyin and English are required'); return; }
+  vocab.push({id:nid++,hanzi:h,pinyin:p,eng:e,tag:t,interval:1,due:0,reps:0,ease:2.5});
+  document.getElementById('a-h').value = '';
+  document.getElementById('a-p').value = '';
+  document.getElementById('a-e').value = '';
+  document.getElementById('a-t').value = '';
+  toast('✓ Added: ' + h);
+}
+
+// ─── Bulk add ────────────────────────────────────────────
+function bulkAdd() {
+  const lines = document.getElementById('bulk-in').value.trim().split('\n');
+  let count = 0;
+  lines.forEach(line => {
+    const parts = line.split(',').map(s => s.trim());
+    if (parts.length >= 3 && parts[0]) {
+      vocab.push({id:nid++,hanzi:parts[0],pinyin:parts[1],eng:parts[2],tag:parts[3]||'',interval:1,due:0,reps:0,ease:2.5});
+      count++;
+    }
+  });
+  document.getElementById('bulk-in').value = '';
+  toast(`✓ Imported ${count} word${count !== 1 ? 's' : ''}`);
+}
+
+// ─── Flashcards ──────────────────────────────────────────
+function startFlash() {
+  fcQueue = dueWords();
+  if (fcQueue.length === 0) {
+    document.getElementById('fc-empty').style.display = 'block';
+    document.getElementById('fc-active').querySelector('.flashcard-wrap').style.display = 'none';
+    document.getElementById('fc-rate').style.display = 'none';
+    document.getElementById('fc-done').style.display = 'none';
+    document.getElementById('fc-prog-text').textContent = '';
+    return;
+  }
+  document.getElementById('fc-empty').style.display = 'none';
+  document.getElementById('fc-done').style.display = 'none';
+  document.getElementById('fc-active').querySelector('.flashcard-wrap').style.display = 'block';
+  fcIdx = 0; fcCorrect = 0;
+  showCard();
+}
+
+function showCard() {
+  if (fcIdx >= fcQueue.length) {
+    document.getElementById('fc-active').querySelector('.flashcard-wrap').style.display = 'none';
+    document.getElementById('fc-rate').style.display = 'none';
+    document.getElementById('fc-done').style.display = 'block';
+    document.getElementById('fc-done-msg').textContent =
+      `Reviewed ${fcQueue.length} card${fcQueue.length!==1?'s':''} — ${fcCorrect} marked easy`;
+    return;
+  }
+  const w = fcQueue[fcIdx];
+  document.getElementById('fc-char').textContent = w.hanzi;
+  document.getElementById('fc-char2').textContent = w.hanzi;
+  document.getElementById('fc-pin').textContent = w.pinyin;
+  document.getElementById('fc-eng').textContent = w.eng;
+  document.getElementById('fc-front').style.display = 'flex';
+  document.getElementById('fc-back').style.display = 'none';
+  document.getElementById('fc-rate').style.display = 'none';
+  fcFlipped = false;
+  const pct = Math.round(fcIdx / fcQueue.length * 100);
+  document.getElementById('fc-prog-bar').style.width = pct + '%';
+  document.getElementById('fc-prog-text').textContent = `${fcIdx + 1} of ${fcQueue.length}`;
+}
+
+function flipCard() {
+  if (fcFlipped) return;
+  fcFlipped = true;
+  document.getElementById('fc-front').style.display = 'none';
+  document.getElementById('fc-back').style.display = 'flex';
+  document.getElementById('fc-rate').style.display = 'block';
+}
+
+function rate(r) {
+  const w = fcQueue[fcIdx];
+  if (r === 0) { w.interval = 1; w.due = now(); }
+  else if (r === 1) { w.interval = Math.max(1, Math.round(w.interval * 1.2)); w.due = now() + w.interval * 86400000; w.reps++; }
+  else { w.interval = Math.round(w.interval * w.ease); w.due = now() + w.interval * 86400000; w.reps++; w.ease = Math.min(3.0, w.ease + 0.1); fcCorrect++; }
+  fcIdx++;
+  showCard();
+}
+
+// ─── Quiz ────────────────────────────────────────────────
+function startQuiz() {
+  qzAnswered = false;
+  document.getElementById('qz-done').style.display = 'none';
+  if (vocab.length < 4) {
+    document.getElementById('qz-empty').style.display = 'block';
+    document.getElementById('qz-active').querySelector('.card').style.display = 'none';
+    document.getElementById('qz-opts').innerHTML = '';
+    return;
+  }
+  document.getElementById('qz-empty').style.display = 'none';
+  document.getElementById('qz-active').querySelector('.card').style.display = 'flex';
+  qzQ = [...vocab].sort(() => Math.random() - 0.5).slice(0, Math.min(10, vocab.length));
+  qzIdx = 0; qzScore = 0;
+  showQuestion();
+}
+
+function showQuestion() {
+  qzAnswered = false;
+  if (qzIdx >= qzQ.length) {
+    document.getElementById('qz-done').style.display = 'block';
+    document.getElementById('qz-active').querySelector('.card').style.display = 'none';
+    document.getElementById('qz-opts').innerHTML = '';
+    const pct = Math.round(qzScore / qzQ.length * 100);
+    document.getElementById('qz-done-icon').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '💪' : '📚';
+    document.getElementById('qz-done-title').textContent = `${qzScore} / ${qzQ.length} correct`;
+    document.getElementById('qz-done-sub').textContent =
+      pct >= 80 ? 'Excellent! Your Chinese is improving!' :
+      pct >= 50 ? 'Good work — keep reviewing the tricky ones.' :
+      'Keep practicing — every session counts!';
+    return;
+  }
+  const w = qzQ[qzIdx];
+  const pct = Math.round(qzIdx / qzQ.length * 100);
+  document.getElementById('qz-prog-bar').style.width = pct + '%';
+  document.getElementById('qz-prog-text').textContent = `${qzIdx + 1} of ${qzQ.length}`;
+  document.getElementById('qz-score-text').textContent = `${qzScore} / ${qzIdx}`;
+  document.getElementById('qz-char').textContent = w.hanzi;
+  document.getElementById('qz-pin').textContent = w.pinyin;
+  const distractors = vocab.filter(v => v.id !== w.id).sort(() => Math.random() - 0.5).slice(0, 3);
+  const opts = [w, ...distractors].sort(() => Math.random() - 0.5);
+  document.getElementById('qz-opts').innerHTML = opts.map(o =>
+    `<button class="quiz-opt" onclick="answerQuiz(${o.id},${w.id})">${o.eng}</button>`
+  ).join('');
+}
+
+function answerQuiz(chosen, correct) {
+  if (qzAnswered) return;
+  qzAnswered = true;
+  if (chosen === correct) qzScore++;
+  document.querySelectorAll('.quiz-opt').forEach(btn => {
+    btn.disabled = true;
+    const id = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
+    if (id === correct) btn.classList.add('correct');
+    else if (id === chosen && chosen !== correct) btn.classList.add('wrong');
+  });
+  setTimeout(() => { qzIdx++; showQuestion(); }, 1300);
+}
+
+// ─── Vocab list ──────────────────────────────────────────
+function renderVocab() {
+  const q = (document.getElementById('voc-search').value || '').toLowerCase();
+  const tags = [...new Set(vocab.map(w => w.tag).filter(Boolean))];
+  document.getElementById('tag-row').innerHTML =
+    `<button class="tag-pill ${activeTag===null?'active':''}" onclick="setTag(null)">All</button>` +
+    tags.map(t => `<button class="tag-pill ${activeTag===t?'active':''}" onclick="setTag('${t}')">${t}</button>`).join('');
+  let list = vocab;
+  if (activeTag) list = list.filter(w => w.tag === activeTag);
+  if (q) list = list.filter(w => w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q) || w.eng.toLowerCase().includes(q));
+  const el = document.getElementById('voc-list');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty"><span class="empty-icon">🔍</span>No words found.</div>';
+    return;
+  }
+  el.innerHTML = list.map(w =>
+    `<div class="vocab-item">
+      <span class="v-hanzi">${w.hanzi}</span>
+      <div class="v-info">
+        <div class="v-pinyin">${w.pinyin}</div>
+        <div class="v-eng">${w.eng}</div>
+      </div>
+      <span class="badge badge-${w.reps===0?'new':w.reps<3?'learning':'known'}">${w.reps===0?'new':w.reps<3?'learning':'known'}</span>
+      <button class="delete-btn" onclick="deleteWord(${w.id})" aria-label="Delete">✕</button>
+    </div>`
+  ).join('');
+}
+
+function setTag(t) { activeTag = t; renderVocab(); }
+function deleteWord(id) { vocab = vocab.filter(w => w.id !== id); renderVocab(); }
+
+// ─── iOS install hint ────────────────────────────────────
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+if (isIOS && !isStandalone) {
+  document.getElementById('install-banner').style.display = 'flex';
+}
+
+// ─── Service Worker (offline support) ───────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── Init ────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>
