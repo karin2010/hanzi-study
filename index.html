@@ -291,6 +291,80 @@
   .tone-4 { color: #60a5fa; } /* 4th tone - blue */
   .tone-5 { color: var(--muted); } /* neutral - gray */
 
+
+  /* ─── Calendar ─── */
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cal-title { font-size: 17px; font-weight: 600; }
+  .cal-nav {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text); font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; margin-bottom: 16px;
+  }
+  .cal-dow {
+    text-align: center; font-size: 11px; color: var(--muted);
+    padding: 4px 0; font-weight: 600; letter-spacing: 0.5px;
+  }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    position: relative; border: 1.5px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .cal-day:hover { border-color: var(--border2); }
+  .cal-day.empty { cursor: default; }
+  .cal-day.today { border-color: var(--accent) !important; }
+  .cal-day.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .cal-day-num { font-size: 13px; font-weight: 500; line-height: 1; }
+  .cal-day.other-month .cal-day-num { color: var(--hint); }
+  .cal-dot-row { display: flex; gap: 2px; margin-top: 3px; }
+  .cal-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+  }
+  .dot-flash { background: var(--accent); }
+  .dot-quiz  { background: var(--green); }
+  .dot-add   { background: var(--amber); }
+  /* Activity intensity background */
+  .cal-day.act-1 { background: rgba(124,106,247,0.10); }
+  .cal-day.act-2 { background: rgba(124,106,247,0.20); }
+  .cal-day.act-3 { background: rgba(124,106,247,0.32); }
+  .cal-day.act-4 { background: rgba(124,106,247,0.48); }
+
+  .day-detail { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  .detail-word-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .detail-word-row:last-child { border-bottom: none; }
+  .dw-hanzi { font-size: 22px; min-width: 36px; }
+  .dw-info { flex: 1; }
+  .dw-pinyin { font-size: 12px; color: var(--accent); }
+  .dw-eng { font-size: 13px; }
+  .dw-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+  .dw-flash  { background: var(--accent-dim); color: var(--accent); }
+  .dw-quiz   { background: var(--green-dim);  color: var(--green);  }
+  .dw-added  { background: var(--amber-dim);  color: var(--amber);  }
+  .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .streak-banner {
+    background: linear-gradient(135deg, var(--accent-dim), rgba(74,222,128,0.08));
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .streak-fire { font-size: 28px; }
+  .streak-info { flex: 1; }
+  .streak-n { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .streak-l { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
   /* ─── Install banner ─── */
   #install-banner {
     position: fixed; top: 0; left: 0; right: 0;
@@ -495,6 +569,58 @@
 </div>
 
 <!-- ═══════════════════════════ NAV BAR ═══════════════════════════ -->
+
+<!-- ═══════════════════════════ CALENDAR ═══════════════════════════ -->
+<div id="screen-cal" class="screen">
+  <div class="page-title">Study Calendar</div>
+  <div class="page-sub" id="cal-sub">Track your daily progress</div>
+
+  <!-- Streak banner -->
+  <div class="streak-banner">
+    <div class="streak-fire">🔥</div>
+    <div class="streak-info">
+      <div class="streak-n" id="streak-count">0</div>
+      <div class="streak-l">day streak — keep it going!</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:var(--muted)">Best</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text)" id="streak-best">0</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot dot-flash"></div>Flashcard</div>
+    <div class="legend-item"><div class="legend-dot dot-quiz"></div>Quiz</div>
+    <div class="legend-item"><div class="legend-dot dot-add"></div>Word added</div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card" style="padding:14px">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calPrev()">‹</button>
+      <div class="cal-title" id="cal-month-label">—</div>
+      <button class="cal-nav" onclick="calNext()">›</button>
+    </div>
+    <div class="cal-grid" id="cal-dow-row">
+      <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div>
+      <div class="cal-dow">Tue</div><div class="cal-dow">Wed</div>
+      <div class="cal-dow">Thu</div><div class="cal-dow">Fri</div>
+      <div class="cal-dow">Sat</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <!-- Day detail panel -->
+  <div id="day-detail-panel" style="display:none">
+    <div class="card day-detail">
+      <div class="card-title" id="day-detail-title">—</div>
+      <div id="day-stats-row" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+      <div id="day-detail-list"></div>
+    </div>
+  </div>
+</div>
+
 <nav>
   <button class="nav-btn active" id="nav-home" onclick="goTo('home')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
@@ -515,6 +641,10 @@
   <button class="nav-btn" id="nav-vocab" onclick="goTo('vocab')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><line x1="4" y1="6" x2="4.01" y2="6"/><line x1="4" y1="12" x2="4.01" y2="12"/><line x1="4" y1="18" x2="4.01" y2="18"/></svg>
     Words
+  </button>
+  <button class="nav-btn" id="nav-cal" onclick="goTo('cal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Calendar
   </button>
 </nav>
 
@@ -2112,6 +2242,7 @@ function goTo(name) {
   if (name === 'flash') startFlash();
   if (name === 'quiz') startQuiz();
   if (name === 'vocab') renderVocab();
+  if (name === 'cal') renderCalendar();
 }
 
 // ─── Toast ───────────────────────────────────────────────
@@ -2121,6 +2252,184 @@ function toast(msg) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2200);
 }
+
+
+// ─── Calendar ────────────────────────────────────────────
+function renderCalendar() {
+  const today = new Date();
+  if (calViewYear === undefined) { calViewYear = today.getFullYear(); calViewMonth = today.getMonth(); }
+
+  // Streak
+  const { streak, best } = calcStreak();
+  document.getElementById('streak-count').textContent = streak;
+  document.getElementById('streak-best').textContent = best;
+  document.getElementById('cal-sub').textContent = streak > 0
+    ? `${streak}-day streak 🔥 — ${dueWords().length} words due today`
+    : `${dueWords().length} words due today`;
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = monthNames[calViewMonth] + ' ' + calViewYear;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calViewYear, calViewMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calViewYear, calViewMonth, 0).getDate();
+
+  const todayStr = todayKey();
+
+  // Fill grid: prev month padding + this month + next month padding
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    let dayNum, keyStr, isOther = false;
+
+    if (i < firstDay) {
+      dayNum = daysInPrev - firstDay + i + 1;
+      const pm = calViewMonth === 0 ? 11 : calViewMonth - 1;
+      const py = calViewMonth === 0 ? calViewYear - 1 : calViewYear;
+      keyStr = dateKey(py, pm, dayNum);
+      isOther = true;
+    } else if (i >= firstDay + daysInMonth) {
+      dayNum = i - firstDay - daysInMonth + 1;
+      const nm = calViewMonth === 11 ? 0 : calViewMonth + 1;
+      const ny = calViewMonth === 11 ? calViewYear + 1 : calViewYear;
+      keyStr = dateKey(ny, nm, dayNum);
+      isOther = true;
+    } else {
+      dayNum = i - firstDay + 1;
+      keyStr = dateKey(calViewYear, calViewMonth, dayNum);
+    }
+
+    if (isOther) cell.classList.add('other-month');
+    if (keyStr === todayStr) cell.classList.add('today');
+    if (keyStr === calSelectedDate) cell.classList.add('selected');
+
+    // Activity data
+    const acts = activityLog[keyStr] || [];
+    const nFlash = acts.filter(a => a.type === 'flash').length;
+    const nQuiz  = acts.filter(a => a.type === 'quiz').length;
+    const nAdd   = acts.filter(a => a.type === 'add').length;
+    const total  = nFlash + nQuiz + nAdd;
+
+    // Intensity bg (only for this month)
+    if (!isOther && total > 0) {
+      const lvl = total <= 2 ? 1 : total <= 5 ? 2 : total <= 10 ? 3 : 4;
+      cell.classList.add('act-' + lvl);
+    }
+
+    cell.innerHTML = `<span class="cal-day-num">${dayNum}</span>`;
+
+    // Dots
+    if (total > 0) {
+      const dotRow = document.createElement('div');
+      dotRow.className = 'cal-dot-row';
+      if (nFlash > 0) { const d = document.createElement('div'); d.className = 'cal-dot dot-flash'; dotRow.appendChild(d); }
+      if (nQuiz > 0)  { const d = document.createElement('div'); d.className = 'cal-dot dot-quiz';  dotRow.appendChild(d); }
+      if (nAdd > 0)   { const d = document.createElement('div'); d.className = 'cal-dot dot-add';   dotRow.appendChild(d); }
+      cell.appendChild(dotRow);
+    }
+
+    cell.addEventListener('click', () => selectCalDay(keyStr));
+    grid.appendChild(cell);
+  }
+
+  // Render selected day detail if any
+  if (calSelectedDate) renderDayDetail(calSelectedDate);
+}
+
+function selectCalDay(key) {
+  calSelectedDate = (calSelectedDate === key) ? null : key;
+  renderCalendar();
+}
+
+function renderDayDetail(key) {
+  const panel = document.getElementById('day-detail-panel');
+  const acts = activityLog[key] || [];
+  if (!calSelectedDate || acts.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+
+  // Format date label
+  const [y,m,d] = key.split('-').map(Number);
+  const label = new Date(y, m-1, d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  document.getElementById('day-detail-title').textContent = label;
+
+  // Stats mini-row
+  const nFlash = acts.filter(a => a.type === 'flash').length;
+  const nQuiz  = acts.filter(a => a.type === 'quiz').length;
+  const nAdd   = acts.filter(a => a.type === 'add').length;
+  const nCorrect = acts.filter(a => a.correct).length;
+  const statsRow = document.getElementById('day-stats-row');
+  statsRow.innerHTML = [
+    nFlash ? `<span class="badge badge-new">${nFlash} flashcard${nFlash!==1?'s':''}</span>` : '',
+    nQuiz  ? `<span class="badge badge-known">${nQuiz} quiz answer${nQuiz!==1?'s':''}</span>` : '',
+    nAdd   ? `<span class="badge badge-learning">${nAdd} word${nAdd!==1?'s':''} added</span>` : '',
+    (nFlash+nQuiz) > 0 ? `<span class="badge" style="background:var(--surface2)">${nCorrect}/${nFlash+nQuiz} correct</span>` : '',
+  ].join('');
+
+  // Word list — deduplicate by hanzi, show all types
+  const seen = {};
+  const rows = [];
+  for (const a of acts) {
+    if (!seen[a.hanzi + a.type]) {
+      seen[a.hanzi + a.type] = true;
+      rows.push(a);
+    }
+  }
+
+  const list = document.getElementById('day-detail-list');
+  if (rows.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:14px">No activity recorded.</div>'; return; }
+
+  list.innerHTML = rows.map(a => {
+    const badgeClass = a.type === 'flash' ? 'dw-flash' : a.type === 'quiz' ? 'dw-quiz' : 'dw-added';
+    const badgeLabel = a.type === 'flash' ? '🃏 Flash' : a.type === 'quiz' ? '🧠 Quiz' : '➕ Added';
+    const correctDot = (a.type === 'flash' || a.type === 'quiz') ? (a.correct ? ' ✓' : ' ✗') : '';
+    return `<div class="detail-word-row">
+      <span class="dw-hanzi">${a.hanzi}</span>
+      <div class="dw-info">
+        <div class="dw-pinyin">${a.pinyin}</div>
+        <div class="dw-eng">${a.eng}</div>
+      </div>
+      <span class="dw-badge ${badgeClass}">${badgeLabel}${correctDot}</span>
+    </div>`;
+  }).join('');
+}
+
+function calPrev() {
+  if (calViewMonth === 0) { calViewMonth = 11; calViewYear--; }
+  else calViewMonth--;
+  calSelectedDate = null;
+  renderCalendar();
+}
+function calNext() {
+  if (calViewMonth === 11) { calViewMonth = 0; calViewYear++; }
+  else calViewMonth++;
+  calSelectedDate = null;
+  renderCalendar();
+}
+
+// Also seed today with some demo activity so calendar isn't empty on first load
+(function seedDemo() {
+  const today = todayKey();
+  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+  const twoDays = (() => { const d = new Date(); d.setDate(d.getDate()-2); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+
+  // Seed some realistic past activity from the word bank
+  function seedDay(key, words, types) {
+    activityLog[key] = words.map((w,i) => ({ type: types[i % types.length], hanzi: w.hanzi, pinyin: w.pinyin, eng: w.eng, tag: w.tag, correct: Math.random() > 0.3, ts: Date.now() }));
+  }
+  const sample = WORD_BANK.slice(0, 20);
+  seedDay(twoDays, sample.slice(0,8), ['flash','flash','quiz','flash','quiz','flash','add','flash']);
+  seedDay(yesterday, sample.slice(5,16), ['flash','quiz','flash','flash','quiz','add','flash','quiz','flash','quiz','add']);
+  seedDay(today, sample.slice(0,5), ['flash','quiz','flash']);
+})();
+
 
 // ─── Dashboard ───────────────────────────────────────────
 function renderHome() {
@@ -2148,7 +2457,9 @@ function quickAdd() {
   const p = document.getElementById('qa-p').value.trim();
   const e = document.getElementById('qa-e').value.trim();
   if (!h || !p || !e) { toast('Fill in all three fields'); return; }
-  vocab.push({id:nid++,hanzi:h,pinyin:p,eng:e,tag:'',interval:1,due:0,reps:0,ease:2.5});
+  const newWordQA = {id:nid++,hanzi:h,pinyin:p,eng:e,tag:'',interval:1,due:0,reps:0,ease:2.5};
+  vocab.push(newWordQA);
+  logActivity('add', newWordQA, {});
   document.getElementById('qa-h').value = '';
   document.getElementById('qa-p').value = '';
   document.getElementById('qa-e').value = '';
@@ -2163,7 +2474,9 @@ function addSingle() {
   const e = document.getElementById('a-e').value.trim();
   const t = document.getElementById('a-t').value.trim();
   if (!h || !p || !e) { toast('Hanzi, pinyin and English are required'); return; }
-  vocab.push({id:nid++,hanzi:h,pinyin:p,eng:e,tag:t,interval:1,due:0,reps:0,ease:2.5});
+  const newWordAS = {id:nid++,hanzi:h,pinyin:p,eng:e,tag:t,interval:1,due:0,reps:0,ease:2.5};
+  vocab.push(newWordAS);
+  logActivity('add', newWordAS, {});
   document.getElementById('a-h').value = '';
   document.getElementById('a-p').value = '';
   document.getElementById('a-e').value = '';
@@ -2178,7 +2491,9 @@ function bulkAdd() {
   lines.forEach(line => {
     const parts = line.split(',').map(s => s.trim());
     if (parts.length >= 3 && parts[0]) {
-      vocab.push({id:nid++,hanzi:parts[0],pinyin:parts[1],eng:parts[2],tag:parts[3]||'',interval:1,due:0,reps:0,ease:2.5});
+      const bw = {id:nid++,hanzi:parts[0],pinyin:parts[1],eng:parts[2],tag:parts[3]||'',interval:1,due:0,reps:0,ease:2.5};
+      vocab.push(bw);
+      logActivity('add', bw, {});
       count++;
     }
   });
@@ -2288,6 +2603,7 @@ function flipCard() {
 
 function rate(r) {
   const w = fcQueue[fcIdx];
+  if (w) logActivity('flash', w, { rating: r, correct: r > 0 });
   if (r === 0) { w.interval = 1; w.due = now(); }
   else if (r === 1) { w.interval = Math.max(1, Math.round(w.interval * 1.2)); w.due = now() + w.interval * 86400000; w.reps++; }
   else { w.interval = Math.round(w.interval * w.ease); w.due = now() + w.interval * 86400000; w.reps++; w.ease = Math.min(3.0, w.ease + 0.1); fcCorrect++; }
@@ -2345,6 +2661,8 @@ function answerQuiz(chosen, correct) {
   if (qzAnswered) return;
   qzAnswered = true;
   if (chosen === correct) qzScore++;
+  const qword = qzQ[qzIdx];
+  if (qword) logActivity('quiz', qword, { correct: chosen === correct });
   document.querySelectorAll('.quiz-opt').forEach(btn => {
     btn.disabled = true;
     const id = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
@@ -2390,6 +2708,49 @@ const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 if (isIOS && !isStandalone) {
   document.getElementById('install-banner').style.display = 'flex';
+}
+
+
+// ─── Activity Log ────────────────────────────────────────
+// activityLog: { "2025-06-21": [ {type:'flash'|'quiz'|'add', hanzi, pinyin, eng, correct?}, ... ] }
+let activityLog = {};
+let calViewYear, calViewMonth, calSelectedDate;
+
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function dateKey(y, m, d) {
+  return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+}
+function logActivity(type, word, extra) {
+  const key = todayKey();
+  if (!activityLog[key]) activityLog[key] = [];
+  activityLog[key].push({ type, hanzi: word.hanzi, pinyin: word.pinyin, eng: word.eng, tag: word.tag, ts: Date.now(), ...extra });
+}
+function calcStreak() {
+  let streak = 0, best = 0, cur = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  // Check consecutive days ending today
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if (activityLog[k] && activityLog[k].length > 0) { streak++; }
+    else { if (i === 0) { streak = 0; } break; }
+  }
+  // Best streak
+  const keys = Object.keys(activityLog).filter(k => activityLog[k].length > 0).sort();
+  cur = 0;
+  for (let i = 0; i < keys.length; i++) {
+    if (i === 0) { cur = 1; }
+    else {
+      const prev = new Date(keys[i-1]); const curr = new Date(keys[i]);
+      const diff = (curr - prev) / 86400000;
+      cur = diff === 1 ? cur + 1 : 1;
+    }
+    best = Math.max(best, cur);
+  }
+  return { streak, best };
 }
 
 // ─── Audio / Speech ──────────────────────────────────────
