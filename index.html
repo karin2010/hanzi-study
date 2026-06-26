@@ -248,6 +248,49 @@
   /* ─── Divider ─── */
   .divider { height: 1px; background: var(--border); margin: 16px 0; }
 
+
+  /* ─── Audio & Listening Mode ─── */
+  .audio-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    background: var(--surface2); color: var(--accent);
+    font-size: 20px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .audio-btn:active { transform: scale(0.92); background: var(--accent-dim); }
+  .audio-btn.playing { background: var(--accent-dim); border-color: var(--accent); animation: pulse 0.6s ease infinite alternate; }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 var(--accent-glow); } to { box-shadow: 0 0 0 8px transparent; } }
+
+  .listen-mode-card {
+    text-align: center; padding: 32px 24px;
+    min-height: 220px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    border-radius: 20px; border: 1px solid var(--border2);
+    background: var(--surface); cursor: pointer;
+  }
+  .listen-wave { font-size: 56px; letter-spacing: -4px; }
+  .listen-hint { font-size: 14px; color: var(--hint); }
+  .listen-reveal { font-size: 18px; color: var(--text); }
+
+  .mode-bar {
+    display: flex; gap: 6px; margin-bottom: 14px;
+    background: var(--surface2); border-radius: 10px; padding: 4px;
+  }
+  .mode-pill {
+    flex: 1; padding: 8px 10px; border: none; border-radius: 7px;
+    background: none; color: var(--muted); font-size: 13px;
+    cursor: pointer; font-family: inherit; font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mode-pill.active { background: var(--surface); color: var(--text); }
+  .tone-1 { color: #f87171; } /* 1st tone - red */
+  .tone-2 { color: #fbbf24; } /* 2nd tone - amber */
+  .tone-3 { color: #4ade80; } /* 3rd tone - green */
+  .tone-4 { color: #60a5fa; } /* 4th tone - blue */
+  .tone-5 { color: var(--muted); } /* neutral - gray */
+
   /* ─── Install banner ─── */
   #install-banner {
     position: fixed; top: 0; left: 0; right: 0;
@@ -332,9 +375,10 @@
 <!-- ═══════════════════════════ FLASHCARDS ═══════════════════════════ -->
 <div id="screen-flash" class="screen">
   <div class="page-title">Flashcards</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px">
-    <button class="btn btn-primary" id="mode-words" onclick="setFlashMode('words')" style="flex:1">📚 Words</button>
-    <button class="btn btn-ghost" id="mode-sents" onclick="setFlashMode('sentences')" style="flex:1">💬 Sentences</button>
+  <div class="mode-bar">
+    <button class="mode-pill active" id="mode-words" onclick="setFlashMode('words')">📚 Words</button>
+    <button class="mode-pill" id="mode-sents" onclick="setFlashMode('sentences')">💬 Sentences</button>
+    <button class="mode-pill" id="mode-listen" onclick="setFlashMode('listen')">🎧 Listen</button>
   </div>
 
   <div id="fc-empty" class="empty" style="display:none">
@@ -352,14 +396,31 @@
 
     <div class="flashcard-wrap">
       <div class="flashcard" id="fc-card" onclick="flipCard()">
+        <!-- Standard flashcard -->
         <div id="fc-front">
           <div class="fc-hanzi" id="fc-char">—</div>
-          <div class="fc-hint">tap to reveal</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+            <div class="fc-hint" id="fc-hint-text">tap to reveal</div>
+            <button class="audio-btn" id="fc-audio-front" onclick="event.stopPropagation();speakChinese(document.getElementById('fc-char').textContent)" title="Listen">🔊</button>
+          </div>
         </div>
         <div id="fc-back" style="display:none">
           <div class="fc-hanzi" id="fc-char2">—</div>
-          <div class="fc-pinyin" id="fc-pin">—</div>
+          <div class="fc-pinyin" id="fc-pin" style="margin:4px 0">—</div>
           <div class="fc-eng" id="fc-eng">—</div>
+          <button class="audio-btn" style="margin-top:10px" onclick="event.stopPropagation();speakChinese(document.getElementById('fc-char2').textContent)" title="Listen again">🔊</button>
+        </div>
+
+        <!-- Listening mode card -->
+        <div id="fc-listen-card" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:180px">
+          <div class="listen-wave" id="fc-listen-wave">🎵</div>
+          <button class="audio-btn" style="width:60px;height:60px;font-size:28px" id="fc-play-btn" onclick="event.stopPropagation();playListenCard()" title="Play audio">🔊</button>
+          <div class="listen-hint" id="fc-listen-hint">Tap 🔊 to hear the word, then tap the card</div>
+          <div id="fc-listen-reveal" style="display:none;text-align:center">
+            <div style="font-size:32px;margin-bottom:4px" id="fc-listen-char">—</div>
+            <div style="font-size:16px;color:var(--accent);margin-bottom:4px" id="fc-listen-pin">—</div>
+            <div style="font-size:15px;color:var(--text)" id="fc-listen-eng">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2031,6 +2092,7 @@ let sentences = SENTENCE_BANK.map((s, i) => ({
 
 let activeTag = null;
 let sentenceMode = false;
+let listenMode = false;
 
 let fcQueue=[], fcIdx=0, fcFlipped=false, fcCorrect=0;
 let qzQ=[], qzIdx=0, qzScore=0, qzAnswered=false;
@@ -2127,8 +2189,11 @@ function bulkAdd() {
 // ─── Flashcards ──────────────────────────────────────────
 function setFlashMode(mode) {
   sentenceMode = (mode === 'sentences');
-  document.getElementById('mode-words').className = sentenceMode ? 'btn btn-ghost' : 'btn btn-primary';
-  document.getElementById('mode-sents').className = sentenceMode ? 'btn btn-primary' : 'btn btn-ghost';
+  listenMode = (mode === 'listen');
+  ['mode-words','mode-sents','mode-listen'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  document.getElementById('mode-' + (mode === 'listen' ? 'listen' : mode === 'sentences' ? 'sents' : 'words')).classList.add('active');
   startFlash();
 }
 
@@ -2164,17 +2229,37 @@ function showCard() {
     return;
   }
   const w = fcQueue[fcIdx];
-  const isSent = sentenceMode || w.hanzi.length > 4;
+  const isSent = sentenceMode || (!listenMode && w.hanzi.length > 4);
   document.getElementById('fc-char').textContent = w.hanzi;
   document.getElementById('fc-char2').textContent = w.hanzi;
   document.getElementById('fc-char').style.fontSize = isSent ? '22px' : '72px';
   document.getElementById('fc-char2').style.fontSize = isSent ? '22px' : '72px';
   document.getElementById('fc-pin').textContent = w.pinyin;
   document.getElementById('fc-eng').textContent = w.eng;
-  document.getElementById('fc-front').style.display = 'flex';
-  document.getElementById('fc-back').style.display = 'none';
-  document.getElementById('fc-rate').style.display = 'none';
   fcFlipped = false;
+  listenPlayed = false;
+
+  if (listenMode) {
+    // Listening mode: hide front/back, show listen card
+    document.getElementById('fc-front').style.display = 'none';
+    document.getElementById('fc-back').style.display = 'none';
+    document.getElementById('fc-listen-card').style.display = 'flex';
+    document.getElementById('fc-listen-reveal').style.display = 'none';
+    document.getElementById('fc-listen-hint').textContent = 'Tap 🔊 to hear the word, then tap the card';
+    document.getElementById('fc-listen-wave').textContent = '🎵';
+    document.getElementById('fc-listen-char').textContent = w.hanzi;
+    document.getElementById('fc-listen-pin').textContent = w.pinyin;
+    document.getElementById('fc-listen-eng').textContent = w.eng;
+    // Auto-play after a short delay
+    setTimeout(() => speakChinese(w.hanzi), 400);
+  } else {
+    document.getElementById('fc-front').style.display = 'flex';
+    document.getElementById('fc-back').style.display = 'none';
+    document.getElementById('fc-listen-card').style.display = 'none';
+    // Auto-play audio when card appears
+    setTimeout(() => speakChinese(w.hanzi), 300);
+  }
+  document.getElementById('fc-rate').style.display = 'none';
   const pct = Math.round(fcIdx / fcQueue.length * 100);
   document.getElementById('fc-prog-bar').style.width = pct + '%';
   document.getElementById('fc-prog-text').textContent = `${fcIdx + 1} of ${fcQueue.length}`;
@@ -2183,6 +2268,19 @@ function showCard() {
 function flipCard() {
   if (fcFlipped) return;
   fcFlipped = true;
+  if (listenMode) {
+    // Reveal answer in listen card
+    document.getElementById('fc-listen-reveal').style.display = 'block';
+    document.getElementById('fc-listen-hint').style.display = 'none';
+    document.getElementById('fc-listen-wave').style.display = 'none';
+    document.getElementById('fc-rate').style.display = 'block';
+    if (sentenceMode) {
+      document.getElementById('fc-rate').innerHTML = '<button class="btn btn-primary btn-block" onclick="rate(2)">Next ➜</button>';
+    } else {
+      document.getElementById('fc-rate').innerHTML = '<p style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:12px">Did you get it right?</p><div class="btn-row"><button class="btn btn-red" onclick="rate(0)">Again</button><button class="btn btn-amber" onclick="rate(1)">Hard</button><button class="btn btn-green" onclick="rate(2)">Got it!</button></div>';
+    }
+    return;
+  }
   document.getElementById('fc-front').style.display = 'none';
   document.getElementById('fc-back').style.display = 'flex';
   document.getElementById('fc-rate').style.display = 'block';
@@ -2292,6 +2390,47 @@ const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 if (isIOS && !isStandalone) {
   document.getElementById('install-banner').style.display = 'flex';
+}
+
+// ─── Audio / Speech ──────────────────────────────────────
+let synth = window.speechSynthesis;
+let currentUtterance = null;
+let listenPlayed = false;
+
+function speakChinese(text, onEnd) {
+  if (!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.85;
+  u.pitch = 1.0;
+  // Try to pick a Chinese voice
+  const voices = synth.getVoices();
+  const zh = voices.find(v => v.lang.startsWith('zh'));
+  if (zh) u.voice = zh;
+  if (onEnd) u.onend = onEnd;
+  const btn = document.getElementById('fc-play-btn');
+  if (btn) {
+    btn.classList.add('playing');
+    u.onend = () => { btn.classList.remove('playing'); if (onEnd) onEnd(); };
+    u.onerror = () => btn.classList.remove('playing');
+  }
+  currentUtterance = u;
+  synth.speak(u);
+}
+
+// Ensure voices are loaded (iOS quirk)
+if (synth && synth.getVoices().length === 0) {
+  synth.addEventListener('voiceschanged', () => {}, { once: true });
+}
+
+function playListenCard() {
+  const w = fcQueue[fcIdx];
+  if (!w) return;
+  listenPlayed = true;
+  document.getElementById('fc-listen-hint').textContent = 'Now tap the card to reveal the answer';
+  document.getElementById('fc-listen-wave').textContent = '🎵';
+  speakChinese(w.hanzi);
 }
 
 // ─── Service Worker (offline support) ───────────────────
